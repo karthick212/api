@@ -1,0 +1,38 @@
+router.post('/createProfile', (req, res) => {
+  let id = Math.floor(1000 + Math.random() * 9000);
+  req.body.driver_id = 'D'+id;
+  driverActivity.Createprofiledetails(req.body, (err, count) => {
+    (err) ? res.json(err) : res.json('success');
+  })
+})
+var storage = multer.diskStorage(
+  {
+    destination: 'upload/driver',
+    filename: function (req, file, cb) {
+      cb(null, file.originalname);
+    }
+  }
+); var upload = multer({ storage: storage }); // Profile Image // var 
+cpUpload = upload.fields([{ name: 'driver_image', maxCount: 1, path }, { 
+name: 'driver_aadhar', maxCount: 1 }]) 
+router.post('/createProfileImage', upload.array('driver_files'), (req, 
+res) => {
+  let header;
+  if (req.headers['driver_id']) {
+    header = req.headers['driver_id']
+  }
+  let driver = [];
+  req.files.map((res, index) => {
+    driver[index] = res.path;
+  })
+  console.log(driver)
+  // return driver
+  driverActivity.CreatprofilImages(driver, header, (err, result) => {
+    if (err) throw err;
+    if (result) {
+      let result = { 'message': 'success' }
+      res.send(result)
+    }
+  });
+})
+module.exports = router
