@@ -27,7 +27,8 @@ DriverOtp(otp, role, imeino, callback) {
   // OTP Check
   checkOtp(userdata, cb) {
     let query = 'SELECT count(*) as cnt,ifnull((SELECT count(*) FROM tbl_userdetails WHERE isActive<>0 and Mobile=tbl_otplist.mobile),0) as usermob FROM tbl_otplist WHERE otp = ? and mobile = ? and role = ?'
-    return dbconfig.query(query, [userdata.otp, userdata.number, userdata.role], (err, rows) => {
+    return dbconfig.query(query, [userdata.otp, userdata.mobno, userdata.roll], (err, rows) => {
+console.log(rows)
       if (rows[0].cnt > 0)
        {
         if(rows[0].usermob>0)

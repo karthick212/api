@@ -15,7 +15,17 @@ if(err){
 }  
 });  
 });
-
+//Courier Company - App
+itemRoutes.route('/CourierCompany/App').get(function(req,res,err){
+//tbl_couriercompany.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select CourierName from tbl_couriercompany",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
 itemRoutes.route('/CourierCompany/Auto').get(function(req,res,err){
 var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_couriercompany",function(err,result,fields){
 if(err){

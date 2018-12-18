@@ -16,6 +16,42 @@ if(err){
 });  
 });
 
+//Product Type - App
+itemRoutes.route('/ProductType/App').get(function(req,res,err){
+//tbl_producttype.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select ProductType from tbl_producttype",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
+//Product Type - Courier
+itemRoutes.route('/ProductType/Courier').get(function(req,res,err){
+//tbl_producttype.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select ProductType from tbl_producttype where isCourier='True'",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
+//Product Type - Parcel
+itemRoutes.route('/ProductType/Parcel').get(function(req,res,err){
+//tbl_producttype.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select ProductType  from tbl_producttype where isParcel='True'",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
 itemRoutes.route('/ProductType/Auto').get(function(req,res,err){
 var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_producttype",function(err,result,fields){
 if(err){

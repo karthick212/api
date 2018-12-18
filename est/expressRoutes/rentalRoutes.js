@@ -7,7 +7,7 @@ var dbconfig = require('../config/db');
 //Rental Rate
 itemRoutes.route('/RentalRate').get(function(req,res,err){
 //tbl_RentalRate.FetchAllDetails((err,result,fields)=>{
-dbconfig.query("select * from tbl_rentalrate",(err,result,fields)=>{
+dbconfig.query("select *,Hours1 as RentalPackage from tbl_rentalrate",(err,result,fields)=>{
 if(err){
   res.json(err);
 }else{
@@ -25,7 +25,17 @@ if(err){
 }  
 });  
 });
-
+//Rental Rate - App
+itemRoutes.route('/RentalRate/App').get(function(req,res,err){
+//tbl_RentalRate.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select Hours1 as RentalPackage from tbl_rentalrate",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
 itemRoutes.route('/RentalRate/Del/:id').get(function(req,res,err){
 var id = req.params.id;  
   var qry="Delete from tbl_rentalrate where id="+id; 

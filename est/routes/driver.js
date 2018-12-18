@@ -85,7 +85,7 @@ router.post('/checkotp', (req, res) => {
   driverActivity.checkOtp(req.body, (err, row, status) => {
     if (err) throw err
     if (row.length) {
-      let result = {'message': 'success','status':status }
+      let result = {'message': 'OTP VERIFIED','status':status }
       res.send(result)
     } else {
       let result = {'message': 'Wrong OTP','status':'' }
