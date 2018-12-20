@@ -1,6 +1,9 @@
 const dbconfig = require('../config/db')
 const Request = require("request");
 const common = require('../controller/common-Controller')
+var distance = require('google-distance');
+distance.apiKey = 'AIzaSyCZsnc36jrvx7sdu0iHfhAbtGGZXFOJ2nA';
+
 var UserController = {
   courierDetails(otpdata, callback) {
     let resp;
@@ -41,6 +44,8 @@ var UserController = {
   },
 AmountCalc(res, cb) { 
       let ResMsg = {};
+      let flat=res.flat
+      let flong=res.flong
       let fs=res.fromstate;
       let ts=res.tostate;
       let ctype=res.couriertype;
@@ -56,17 +61,43 @@ AmountCalc(res, cb) {
       let BT2=(BL2*BB2*BH2)/5000;
 
       let cond="";
-     //console.log(ctype);
-      if(ctype.indexOf('loc')>=0){ cond=' and Area=\'Local\'' ;}
+      //console.log(ctype);
+      if(ctype.indexOf('loc')>=0){ cond=' and Area=\'Local\'' ;console.log(cond);}
 
-      //let query = 'SELECT count(*) as cnt,ifnull((SELECT count(*) FROM tbl_userdetails WHERE isActive<>0 and Mobile=tbl_otplist.mobile),0) as usermob FROM tbl_otplist WHERE otp = ? and mobile = ? and role = ?'
       let query='select Oprice from tbl_courierrate where Couriername=? and DocumentLength=? and DocumentBreadth=? and FromState like ? and ToState like ?'+cond
-      dbconfig.query(query, [cname,res.DL1,res.DB1,'%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.DAmt1 = rows[0].Oprice; } catch (e) {  ResMsg.DAmt1=0 } });
-      dbconfig.query(query, [cname,res.DL2,res.DB2,'%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.DAmt2 = rows[0].Oprice; } catch(e) { ResMsg.DAmt2=0; } });
+      dbconfig.query(query, [cname,res.DL1,res.DB1,'%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.DAmt1 = rows[0].Oprice} catch(e) { ResMsg.DAmt1=0; } })
+      dbconfig.query(query, [cname,res.DL2,res.DB2,'%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.DAmt2 = rows[0].Oprice} catch(e) { ResMsg.DAmt2=0; } })
 
       query='select Oprice from tbl_courierrate where Couriername=? and BoxWeight>=? and FromState like ? and ToState like ? '+cond+'order by BoxWeight'
       dbconfig.query(query, [cname,BT1,'%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.BAmt1 = rows[0].Oprice } catch(e) { ResMsg.BAmt1=0; }})
-      dbconfig.query(query, [cname,BT2,'%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.BAmt2 = rows[0].Oprice; } catch(e){ ResMsg.BAmt2=0; } return cb(null,ResMsg)})
+      dbconfig.query(query, [cname,BT2,'%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.BAmt2 = rows[0].Oprice; } catch(e){ ResMsg.BAmt2=0; }})
+
+      let dqry='SELECT id,latitude,longitude,Area, ( 3959 * acos( cos( radians(?) ) * cos( radians( Latitude ) ) * cos( radians( longitude ) - radians(?) ) + sin( radians(?) ) * sin( radians( Latitude ) ) ) ) AS distance FROM tbl_courierlink HAVING distance < 25 ORDER BY distance LIMIT 0 , 1'
+      dbconfig.query(dqry,[res.flat,res.flong,res.flat],(err,rows)=>{
+        //let gqry='https://maps.googleapis.com/maps/api/distancematrix/json?origins='+res.flat+','+res.flong+'&destinations='+rows[0].latitude+','+rows[0].longitude+'&mode=driving&language=en-EN&sensor=false&key=AIzaSyCZsnc36jrvx7sdu0iHfhAbtGGZXFOJ2nA'
+          let Amt=0;
+          distance.get({origin:res.flat+','+res.flong,destination:rows[0].latitude+','+rows[0].longitude },(err,rowss)=>{
+          let query='select * from tbl_courierconfig'
+          let dist=rowss.distanceValue/1000
+          dbconfig.query(query, (err, rows) => { 
+          try {             
+          let firstkm=rows[0].studentMinRate+rows[0].DMinRate
+          let secndkm=rows[0].studentAddlRate+rows[0].DAddlRate
+          Amt=firstkm;
+          let diff=dist-1.2
+          if(Math.sign(diff)!=-1)
+          {
+            for(var i=0;i<parseInt(diff);i++)
+              Amt+=secndkm
+          }
+          ResMsg.SAmt=Amt
+          return cb(null,ResMsg)
+        } 
+        catch(e) { } 
+        })                  
+      })
+        //console.log(dc)
+      });     
 
       //return cb(null,ResMsg)
    },

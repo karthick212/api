@@ -31,7 +31,7 @@ let ResMsg;
       } else {
         debugger;
         //console.log(row);        
-        res.Total=res.BAmt1+res.BAmt2+res.DAmt1+res.DAmt2;
+        res.Total=res.BAmt1+res.BAmt2+res.DAmt1+res.DAmt2+res.SAmt;
         response.json(res);
       }
     });
