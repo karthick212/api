@@ -42,18 +42,20 @@ router.post('/updateuser', (request, response) => {
 })
 
 // View User
-router.post('/viewUser', (request, response) => {  
-  let ResMsg = {}  
-  userActivity.getUserValue(request.body, (err, rows) => {
+router.get('/viewUser', (request, response) => {  
+  let ResMsg = {}
+var mobno=request.param("mobno");  
+  userActivity.getUserValue(mobno, (err, rows) => {
     if (err) throw err
     if (rows) {      
-      ResMsg.status = 'success'
+      //ResMsg.status = 'success'
       ResMsg.data=rows
     } else {
       ResMsg.message = 'Invalid Entry'
       ResMsg.status = 'fail'
     }
     response.json(ResMsg)
+//response.send(JSON.stringify(ResMsg))
   })
 })
 

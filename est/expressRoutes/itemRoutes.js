@@ -156,6 +156,75 @@ if(err){
 });  
 });
 
+//Courier Link
+itemRoutes.route('/CourierLink').get(function(req,res,err){
+dbconfig.query("select * from tbl_courierlink",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
+itemRoutes.route('/CourierLink/Auto').get(function(req,res,err){
+var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_courierlink",function(err,result,fields){
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
+itemRoutes.route('/CourierLink/Del/:id').get(function(req,res,err){
+var id = req.params.id;  
+  var qry="Delete from tbl_courierlink where id="+id; 
+var itemss=  dbconfig.query(qry,function(err,result,fields){
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+ 
+ itemRoutes.route('/CourierLink/add').post(function(req,res,err){
+  var qry="INSERT INTO tbl_courierlink(`id`, `CourierName`, `State`, `City`, `Area`, `Latitude`, `Longitude`, `Description`, `isActive`, `isBlock`) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?);"
+  var itm= dbconfig.query(qry, [req.body.id, req.body.couriername, req.body.fromState, req.body.fromCity, req.body.fromArea, req.body.latitude, req.body.longitude, req.body.desc,1 , req.body.cblock]);
+        if (err) {
+             res.json(err);
+         }
+         else {
+             res.json(req.body);
+         }
+});
+
+ itemRoutes.route('/CourierLink/update').post(function(req,res,err){
+  var qry="update tbl_courierlink set CourierName=?,State=?,City=?,Area=?,Latitude=?,Longitude=?,Description=?,isBlock=? where id=?";
+  var itm= dbconfig.query(qry, [req.body.couriername, req.body.fromState, req.body.fromCity, req.body.fromArea, req.body.latitude, req.body.longitude, req.body.desc, req.body.cblock,req.body.id]);
+  //adminActivity.RegisterAdmin(req.body, (err, count) => {
+         if (err) {
+             res.json(err);
+         }
+         else {
+             res.json(req.body);
+         }
+    //})
+});
+
+itemRoutes.route('/CourierLink/edit/:id').get(function(req,res,err){
+  var id = req.params.id;  
+  var qry="select * from tbl_courierlink where id="+id; 
+var itemss=  dbconfig.query(qry,function(err,result,fields){
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
 //CourierConfig
 itemRoutes.route('/CourierConfig').get(function(req,res,err){
 dbconfig.query("select * from tbl_courierconfig where id=1",(err,result,fields)=>{

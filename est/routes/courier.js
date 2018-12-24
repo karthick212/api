@@ -21,21 +21,48 @@ router.post("/otp", function(request, response) {
 });
 
 // Courier Calculation
-router.post("/Calc", function(request, response) {
-let ResMsg;
+router.get("/Calc", function(request, response) {
+let ResMsg={};
   //if (otpdata != null) 
-  {
-    courierActivity.AmountCalc(request.body, (err, res) => {
-      if (err) {
+
+ var flat=request.param('flat');
+      var flong=request.param('flong');
+      var fs=request.param('fromstate');
+      var ts=request.param('tostate');
+      var ctype=request.param('couriertype');
+      var cname=request.param('couriername');
+	  var DL1=request.param('DL1');
+	  var DB1=request.param('DB1');
+      var DL2=request.param('DL2');
+	  var DB2=request.param('DB2');
+      var BL1=request.param('BL1');
+      var BB1=request.param('BB1');
+      var BH1=request.param('BH1');
+      var BL2=request.param('BL2');
+      var BB2=request.param('BB2');
+      var BH2=request.param('BH2'); 
+
+  courierActivity.AmountCalc(flat,flong,fs,ts,ctype,cname,DL1,DB1,DL2,DB2,BL1,BB1,BH1,BL2,BB2,BH2, (err, res) =>{
+    
+  if (err) {
         response.json(err);
       } else {
-        debugger;
+//        debugger;
         //console.log(row);        
-        res.Total=res.BAmt1+res.BAmt2+res.DAmt1+res.DAmt2+res.SAmt;
-        response.json(res);
+let ress=[]
+let Total=res.DAmt1+res.DAmt2+res.BAmt1+res.BAmt2+res.SAmt;
+
+ress[0] = {'damt1':res.DAmt1,'damt2':res.DAmt2,'bamt1':res.BAmt1,'bamt2':res.BAmt2,'samt':res.SAmt,'Total':Total}  
+
+//      res.Total=res.BAmt1+res.BAmt2+res.DAmt1+res.DAmt2+res.SAmt;
+
+console.log( ress);
+		ResMsg.data=ress;
+
+        response.json(ResMsg);
       }
     });
-  }
+  //}
 });
 
 // Courier Booking

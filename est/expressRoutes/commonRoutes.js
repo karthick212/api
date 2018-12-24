@@ -185,6 +185,18 @@ if(err){
 });  
 });
 
+//City Master - Search
+itemRoutes.route('/CityMaster/Search').post(function(req,res,err){
+//tbl_producttype.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select * from tbl_city where State=?",[req.body.state],(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
 //City Master
 itemRoutes.route('/CityMaster').get(function(req,res,err){
 //tbl_producttype.FetchAllDetails((err,result,fields)=>{
