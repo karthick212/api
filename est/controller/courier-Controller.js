@@ -42,7 +42,8 @@ var UserController = {
       }
     );
   },
-AmountCalc(flat,flong,fs,ts,ctype,cname,DL1,DB1,DL2,DB2,BL1,BB1,BH1,BL2,BB2,BH2,res, cb)  {  
+AmountCalc(flat,flong,fs,ts,ctype,cname,DL1,DB1,DL2,DB2,BL1,BB1,BH1,BL2,BB2,BH2,tlat,tlong, cb)  {  
+	//let res = {}
       let ResMsg = {};
       /* let flat=res.flat
       let flong=res.flong
@@ -59,23 +60,35 @@ AmountCalc(flat,flong,fs,ts,ctype,cname,DL1,DB1,DL2,DB2,BL1,BB1,BH1,BL2,BB2,BH2,
 
       let BT1=(BL1*BB1*BH1)/5000;
       let BT2=(BL2*BB2*BH2)/5000;
+      
+      if(ctype.indexOf('loc')!=0)
+      {
+      let query='select Oprice from tbl_courierrate where DocumentLength=? and DocumentBreadth=? and CourierType=? and FromState like ? and ToState like ?'
+      dbconfig.query(query, [DL1,DB1,'local','%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.DAmt1 = rows[0].Oprice} catch(e) { ResMsg.DAmt1=0; } })
+      dbconfig.query(query, [DL2,DB2,'local','%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.DAmt2 = rows[0].Oprice} catch(e) { ResMsg.DAmt2=0; } })
 
-      let cond="";
-      if(ctype.indexOf('loc')>=0){ cond=' and Area=\'Local\'' ;console.log(cond);}
-
-      let query='select Oprice from tbl_courierrate where Couriername=? and DocumentLength=? and DocumentBreadth=? and CourierType=? and FromState like ? and ToState like ?'+cond
-      dbconfig.query(query, [cname,DL1,DB1,'Document','%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.DAmt1 = rows[0].Oprice} catch(e) { ResMsg.DAmt1=0; } })
-      dbconfig.query(query, [cname,DL2,DB2,'Document','%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.DAmt2 = rows[0].Oprice} catch(e) { ResMsg.DAmt2=0; } })
-
-      query='select Oprice from tbl_courierrate where Couriername=? and BoxWeight>? and CourierType=? and FromState like ? and ToState like ? and BoxWeight>0 '+cond+'order by BoxWeight'
-      if(BT1>0){ dbconfig.query(query, [cname,BT1,'Box','%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.BAmt1 = rows[0].Oprice } catch(e) { ResMsg.BAmt1=0; }})} else {ResMsg.BAmt1=0 }
-      if(BT2>0){ dbconfig.query(query, [cname,BT2,'Box','%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.BAmt2 = rows[0].Oprice; } catch(e){ ResMsg.BAmt2=0; }})} else { ResMsg.BAmt2=0 }
+      query='select Oprice from tbl_courierrate where  BoxWeight>? and CourierType=? and FromState like ? and ToState like ? and BoxWeight>0 order by BoxWeight'
+      if(BT1>0){ dbconfig.query(query, [BT1,'domestic','%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.BAmt1 = rows[0].Oprice;ResMsg.BWgt1=BT1; } catch(e) { ResMsg.BAmt1=0; ResMsg.BWgt1=0; }})} else {ResMsg.BAmt1=0;ResMsg.BWgt1=0; }
+      if(BT2>0){ dbconfig.query(query, [BT2,'domestic','%'+fs+'%','%'+ts+'%'], (err, rows) => { try{ ResMsg.BAmt2 = rows[0].Oprice; ResMsg.BWgt2=BT2;} catch(e){ ResMsg.BAmt2=0;ResMsg.BWgt2=0; }})} else { ResMsg.BAmt2=0;ResMsg.BWgt2=0; }
+      }
 
       let dqry='SELECT id,latitude,longitude,Area, ( 3959 * acos( cos( radians(?) ) * cos( radians( Latitude ) ) * cos( radians( longitude ) - radians(?) ) + sin( radians(?) ) * sin( radians( Latitude ) ) ) ) AS distance FROM tbl_courierlink HAVING distance < 25 ORDER BY distance LIMIT 0 , 1'
       dbconfig.query(dqry,[flat,flong,flat],(err,rows)=>{
         //let gqry='https://maps.googleapis.com/maps/api/distancematrix/json?origins='+res.flat+','+res.flong+'&destinations='+rows[0].latitude+','+rows[0].longitude+'&mode=driving&language=en-EN&sensor=false&key=AIzaSyCZsnc36jrvx7sdu0iHfhAbtGGZXFOJ2nA'
-          let Amt=0;
-          distance.get({origin:flat+','+flong,destination:rows[0].latitude+','+rows[0].longitude },(err,rowss)=>{
+          let Amt=0;          
+          let tolat=rows[0].latitude
+          let tolong=rows[0].longitude
+          if(ctype.indexOf('loc')>=0)
+          { 
+            tolat=tlat
+            tolong=tlong
+            ResMsg.DAmt1=0
+            ResMsg.DAmt2=0
+            ResMsg.BAmt1=0
+            ResMsg.BAmt2=0
+          }
+
+          distance.get({origin:flat+','+flong,destination:tolat+','+tolong },(err,rowss)=>{
           let query='select * from tbl_courierconfig'
           let dist=rowss.distanceValue/1000
           dbconfig.query(query, (err, rows) => { 
@@ -90,6 +103,7 @@ AmountCalc(flat,flong,fs,ts,ctype,cname,DL1,DB1,DL2,DB2,BL1,BB1,BH1,BL2,BB2,BH2,
               Amt+=secndkm
           }
           ResMsg.SAmt=Amt
+	  ResMsg.localdist=dist
           return cb(null,ResMsg)
         } 
         catch(e) { } 
@@ -109,8 +123,9 @@ AddBooking(user,callback) {
         var seconds = date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds();
         time = hours + ":" + minutes + ":" + seconds;
         let RandomOtp = Math.floor(1000 + Math.random() * 9000)
-        let insertQuery = 'INSERT INTO `tbl_courierbooking` (`BookingId`, `BookingSerial`, `BookingDate`, `BookingTime`, `FromRange`, `ToRange`, `FromAddress`, `ToAddress`, `CourierType`, `CourierName`, `ProductType`, `LocalAdd1`, `LocalAdd2`, `LocalAdd3`,          `DL1`,      `DB1`,    `DAmt1`,   `DL2`,   `DB2`,  `DAmt2`,    `BL1`,   `BB1`,  `BH1`,   `BW1`,  `BAmt1`,   `BL2`,   `BB2`,  `BH2`,    `BW2`, `BAmt2`,     `Total`, `PaymentMode`, `CouponCode`, `CouponAmt`,     `NetTotal`,   `isCancel`, `isActive`, `MobileNo`, `OTP`, `BankRefNo`, `UserID`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-        return dbconfig.query(insertQuery,                  [user.bid,    user.bserial,    todate,          time,       user.fromrange,user.torange,user.fromadd,user.toadd, user.ctype,       user.cname,  user.product,   user.localadd1,user.localadd2,user.localadd3,user.dl1,user.db1,user.damt1,user.dl2,user.db2,user.damt2,user.bl1,user.bb1,user.bh1,user.bw1,user.bamt1,user.bl2,user.bb2,user.bh2,user.bw2,user.bamt2,user.total,user.paymode,user.couponcode,user.couponamt,user.nettotal,user.iscancel,'1',user.mobno,RandomOtp,user.bankrefno,user.userid], (err, results) => {
+        let RandomOtp2 = Math.floor(1000 + Math.random() * 9000)
+        let insertQuery = 'INSERT INTO `tbl_courierbooking` (`BookingId`, `BookingSerial`, `BookingDate`, `BookingTime`, `FromRange`, `ToRange`, `FromAddress`, `ToAddress`, `CourierType`, `CourierName`, `ProductType`, `LocalAdd1`, `LocalAdd2`, `LocalAdd3`,          `DL1`,      `DB1`,    `DAmt1`,   `DL2`,   `DB2`,  `DAmt2`,    `BL1`,   `BB1`,  `BH1`,   `BW1`,  `BAmt1`,   `BL2`,   `BB2`,  `BH2`,    `BW2`, `BAmt2`,     `Total`, `PaymentMode`, `CouponCode`, `CouponAmt`,     `NetTotal`,   `isCancel`, `isActive`, `MobileNo`, `OTP`, `BankRefNo`, `UserID`, `RecName`, `RecMobile`, `Remarks`, `LocalDistance`, `SAmt`, `RecOTP`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        return dbconfig.query(insertQuery,                  [user.bid,    user.bserial,    todate,          time,       user.fromrange,user.torange,user.fromadd,user.toadd, user.ctype,       user.cname,  user.product,   user.localadd1,user.localadd2,user.localadd3,user.dl1,user.db1,user.damt1,user.dl2,user.db2,user.damt2,user.bl1,user.bb1,user.bh1,user.bw1,user.bamt1,user.bl2,user.bb2,user.bh2,user.bw2,user.bamt2,user.total,user.paymode,user.couponcode,user.couponamt,user.nettotal,user.iscancel,'1',user.mobno,RandomOtp,user.bankrefno,user.userid,user.recname,user.recmobile,user.remarks,user.localdistance,user.samt,RandomOtp2], (err, results) => {
           if (results.affectedRows > 0) {
             let ResMsg={};
             ResMsg.msg="success"           
