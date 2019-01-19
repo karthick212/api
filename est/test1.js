@@ -16,6 +16,8 @@ const apiadmin = require('./routes/admin')
 const apidriver = require('./routes/driver')
 const apicourier = require('./routes/courier')
 const apiuser = require('./routes/user')
+const apiparcel = require('./routes/parcel')
+const apirental = require('./routes/rental')
 
 config.connect(function(err) {
   if (err) throw err
@@ -38,6 +40,9 @@ app.use('/api/admin/', apiadmin)
 app.use('/api/driver/', apidriver)
 app.use('/api/user/', apiuser)
 app.use('/api/courier/', apicourier)
+app.use('/api/parcel/', apiparcel)
+app.use('/api/rental/', apirental)
+
       const port = process.env.PORT || 4000;
 
       const server = app.listen(port, function(){

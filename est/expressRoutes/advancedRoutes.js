@@ -77,6 +77,30 @@ if(err){
 });
 
 //Offers
+itemRoutes.route('/CommonOffers/Offers').get(function(req,res,err){
+//tbl_CommonOffers.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select ServiceCity,OfferCode,OfferRate,Content,image from tbl_commonoffers where Type='Offers'",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
+//Updates
+itemRoutes.route('/CommonOffers/Updates').get(function(req,res,err){
+//tbl_CommonOffers.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select ServiceCity,OfferCode,OfferRate,Content,image from tbl_commonoffers where Type='Updates'",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
+//Offers
 itemRoutes.route('/CommonOffers').get(function(req,res,err){
 //tbl_CommonOffers.FetchAllDetails((err,result,fields)=>{
 dbconfig.query("select * from tbl_commonoffers",(err,result,fields)=>{
@@ -233,6 +257,29 @@ if(err){
 });  
 });
 
+//FAQ-Question
+itemRoutes.route('/FAQ/Question').get(function(req,res,err){
+//tbl_faq.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select QuestionBody from tbl_faq",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
+//FAQ-Answer
+itemRoutes.route('/FAQ/Answer').get(function(req,res,err){
+//tbl_faq.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select QuestionLink,Description from tbl_faq where QuestionBody=?",[req.query.question],(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
 itemRoutes.route('/FAQ/Auto').get(function(req,res,err){
 var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_faq",function(err,result,fields){
 if(err){

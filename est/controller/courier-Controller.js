@@ -60,6 +60,14 @@ AmountCalc(flat,flong,fs,ts,ctype,cname,DL1,DB1,DL2,DB2,BL1,BB1,BH1,BL2,BB2,BH2,
 
       let BT1=(BL1*BB1*BH1)/5000;
       let BT2=(BL2*BB2*BH2)/5000;
+
+
+let cond="";
+console.log("ener");
+
+  if(ctype.indexOf('loc')>=0){ cond=' and Area=\'Local\'' ;console.log(cond);}
+
+
       
       if(ctype.indexOf('loc')!=0)
       {
@@ -87,7 +95,6 @@ AmountCalc(flat,flong,fs,ts,ctype,cname,DL1,DB1,DL2,DB2,BL1,BB1,BH1,BL2,BB2,BH2,
             ResMsg.BAmt1=0
             ResMsg.BAmt2=0
           }
-
           distance.get({origin:flat+','+flong,destination:tolat+','+tolong },(err,rowss)=>{
           let query='select * from tbl_courierconfig'
           let dist=rowss.distanceValue/1000
@@ -124,12 +131,14 @@ AddBooking(user,callback) {
         time = hours + ":" + minutes + ":" + seconds;
         let RandomOtp = Math.floor(1000 + Math.random() * 9000)
         let RandomOtp2 = Math.floor(1000 + Math.random() * 9000)
-        let insertQuery = 'INSERT INTO `tbl_courierbooking` (`BookingId`, `BookingSerial`, `BookingDate`, `BookingTime`, `FromRange`, `ToRange`, `FromAddress`, `ToAddress`, `CourierType`, `CourierName`, `ProductType`, `LocalAdd1`, `LocalAdd2`, `LocalAdd3`,          `DL1`,      `DB1`,    `DAmt1`,   `DL2`,   `DB2`,  `DAmt2`,    `BL1`,   `BB1`,  `BH1`,   `BW1`,  `BAmt1`,   `BL2`,   `BB2`,  `BH2`,    `BW2`, `BAmt2`,     `Total`, `PaymentMode`, `CouponCode`, `CouponAmt`,     `NetTotal`,   `isCancel`, `isActive`, `MobileNo`, `OTP`, `BankRefNo`, `UserID`, `RecName`, `RecMobile`, `Remarks`, `LocalDistance`, `SAmt`, `RecOTP`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-        return dbconfig.query(insertQuery,                  [user.bid,    user.bserial,    todate,          time,       user.fromrange,user.torange,user.fromadd,user.toadd, user.ctype,       user.cname,  user.product,   user.localadd1,user.localadd2,user.localadd3,user.dl1,user.db1,user.damt1,user.dl2,user.db2,user.damt2,user.bl1,user.bb1,user.bh1,user.bw1,user.bamt1,user.bl2,user.bb2,user.bh2,user.bw2,user.bamt2,user.total,user.paymode,user.couponcode,user.couponamt,user.nettotal,user.iscancel,'1',user.mobno,RandomOtp,user.bankrefno,user.userid,user.recname,user.recmobile,user.remarks,user.localdistance,user.samt,RandomOtp2], (err, results) => {
+	var ctype=user.ctype;
+	let insertQuery = 'INSERT INTO `tbl_courierbooking` (`BookingId`, `BookingSerial`, `BookingDate`, `BookingTime`, `FromRange`, `ToRange`, `FromAddress`, `ToAddress`, `CourierType`, `CourierName`, `ProductType`, `LocalAdd1`, `LocalAdd2`, `LocalAdd3`,          `DL1`,      `DB1`,    `DAmt1`,   `DL2`,   `DB2`,  `DAmt2`,    `BL1`,   `BB1`,  `BH1`,   `BW1`,  `BAmt1`,   `BL2`,   `BB2`,  `BH2`,    `BW2`, `BAmt2`,     `Total`, `PaymentMode`, `CouponCode`, `CouponAmt`,     `NetTotal`,   `isCancel`, `isActive`, `MobileNo`, `OTP`, `BankRefNo`, `UserID`, `RecName`, `RecMobile`, `Remarks`, `LocalDistance`, `SAmt`, `RecOTP`, `NOI`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        return dbconfig.query(insertQuery,                  [user.bid,    user.bserial,    todate,          time,       user.fromrange,user.torange,user.fromadd,user.toadd, user.ctype,       user.cname,  user.product,   user.localadd1,user.localadd2,user.localadd3,user.dl1,user.db1,user.damt1,user.dl2,user.db2,user.damt2,user.bl1,user.bb1,user.bh1,user.bw1,user.bamt1,user.bl2,user.bb2,user.bh2,user.bw2,user.bamt2,user.total,user.paymode,user.couponcode,user.couponamt,user.nettotal,user.iscancel,'1',user.mobno,RandomOtp,user.bankrefno,user.userid,user.recname,user.recmobile,user.remarks,user.localdistance,user.samt,RandomOtp2,user.noi], (err, results) => {
           if (results.affectedRows > 0) {
             let ResMsg={};
-            ResMsg.msg="success"           
-            common.MessageTemplate("BOOKOTP",(results)=>{
+            ResMsg.msg="success :"+RandomOtp; 
+//console.log(ResMsg.msg);          
+	    common.MessageTemplate("CRBKOTP",(results)=>{
               let temp=results;
               temp=temp.replace('$bid$',user.bid);
               temp=temp.replace('$otp$',RandomOtp);
@@ -139,7 +148,19 @@ AddBooking(user,callback) {
                   return callback(null,results)
               });
             });
-            return callback(null, ResMsg)
+	   // if(ctype.indexOf('loc')>=0)
+           // {
+           //  common.MessageTemplate("CRBKOTPR",(results)=>{
+           //    let temp=results;
+           //    temp=temp.replace('$otp$',RandomOtp2);
+           //    //console.log(temp);
+           //    common.SendSMS(user.recmobile,temp,(results)=>{
+           //      if(results!='success')
+           //        return callback(null,results)
+           //    });
+           //  });
+           // }        
+          return callback(null, ResMsg)
           }
           else {
           return callback(null, results)  
