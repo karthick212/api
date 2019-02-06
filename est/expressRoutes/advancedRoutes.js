@@ -2,6 +2,7 @@ var express = require('express');
 var app = express();
 var itemRoutes = express.Router();
 var dbconfig = require('../config/db');
+var multer = require('multer')
 //var tbl_RentalCompany = require('../server/controller/admin-Controller');
 
 //MessageTemplate
@@ -76,10 +77,22 @@ if(err){
 });  
 });
 
+//All
+itemRoutes.route('/CommonOffers/All').get(function(req,res,err){
+//tbl_CommonOffers.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select Type,ServiceCity,OfferCode,OfferRate,Content,filePath from tbl_commonoffersnew",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
 //Offers
 itemRoutes.route('/CommonOffers/Offers').get(function(req,res,err){
 //tbl_CommonOffers.FetchAllDetails((err,result,fields)=>{
-dbconfig.query("select ServiceCity,OfferCode,OfferRate,Content,image from tbl_commonoffers where Type='Offers'",(err,result,fields)=>{
+dbconfig.query("select ServiceCity,OfferCode,OfferRate,Content,filePath from tbl_commonoffersnew where Type='Offers'",(err,result,fields)=>{
 if(err){
   res.json(err);
 }else{
@@ -91,7 +104,7 @@ if(err){
 //Updates
 itemRoutes.route('/CommonOffers/Updates').get(function(req,res,err){
 //tbl_CommonOffers.FetchAllDetails((err,result,fields)=>{
-dbconfig.query("select ServiceCity,OfferCode,OfferRate,Content,image from tbl_commonoffers where Type='Updates'",(err,result,fields)=>{
+dbconfig.query("select ServiceCity,OfferCode,OfferRate,Content,filePath from tbl_commonoffersnew where Type='Updates'",(err,result,fields)=>{
 if(err){
   res.json(err);
 }else{
@@ -100,10 +113,10 @@ if(err){
 });  
 });
 
-//Offers
+//CommonOffersNew
 itemRoutes.route('/CommonOffers').get(function(req,res,err){
 //tbl_CommonOffers.FetchAllDetails((err,result,fields)=>{
-dbconfig.query("select * from tbl_commonoffers",(err,result,fields)=>{
+dbconfig.query("select * from tbl_commonoffersnew",(err,result,fields)=>{
 if(err){
   res.json(err);
 }else{
@@ -113,7 +126,7 @@ if(err){
 });
 
 itemRoutes.route('/CommonOffers/Auto').get(function(req,res,err){
-var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_commonoffers",function(err,result,fields){
+var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_commonoffersnew",function(err,result,fields){
 if(err){
   res.json(err);
 }else{
@@ -124,7 +137,7 @@ if(err){
 
 itemRoutes.route('/CommonOffers/Del/:id').get(function(req,res,err){
 var id = req.params.id;  
-  var qry="Delete from tbl_commonoffers where id="+id; 
+  var qry="Delete from tbl_commonoffersnew where id="+id; 
 var itemss=  dbconfig.query(qry,function(err,result,fields){
 if(err){
   res.json(err);
@@ -134,8 +147,50 @@ if(err){
 });  
 });
  
- itemRoutes.route('/CommonOffers/add').post(function(req,res,err){
-  var qry="INSERT INTO tbl_commonoffers VALUES (?,?,?,?,?,?,?,?);"
+ function getExtension(file) {
+    // this function gets the filename extension by determining mimetype. To be exanded to support others, for example .jpeg or .tiff
+    var res = '';
+    if (file.mimetype === 'image/jpeg') res = '.jpg';
+    if (file.mimetype === 'image/png') res = '.png';
+    return res;
+  }
+
+ var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+console.log(file)
+        cb(null, '/var/www/html/upload/offers')
+    },
+    filename: function (req, file, cb) {
+console.log(file)
+      if(file==undefined)
+        cb(null, undefined);
+      else
+        cb(null, file.originalname + '-' + Date.now() + getExtension(file));
+    }
+});
+
+var upload = multer({ storage: storage })
+// .fields([ // fields to accept multiple types of uploads
+//     { name: "image", maxCount: 1 } // in <input name='fileName' />
+//]);
+
+itemRoutes.post('/CommonOffers/add',upload.any(),function(req,res,err){
+  var qry="INSERT INTO tbl_commonoffersnew VALUES (?,?,?,?,?,?,?,?,?,?);"
+  var itm= dbconfig.query(qry, [req.body.id, req.body.selectedcity, req.body.selectedType, req.body.offercode, req.body.offerrate, req.body.note, req.files[0].originalname,'/upload/offers/'+req.files[0].filename, req.files[0].mimetype,1]);
+  //adminActivity.RegisterAdmin(req.body, (err, count) => {
+        if (err) {
+             res.json(err);
+         }
+         else {
+             res.json(req.body);
+         }
+    //})
+    //console.log(itm)
+});
+
+itemRoutes.post('/CommonOffersNew/add',function(req,res,err){
+
+  var qry="INSERT INTO tbl_commonoffersnew VALUES (?,?,?,?,?,?,?,?);"
   var itm= dbconfig.query(qry, [req.body.id, req.body.selectedcity, req.body.selectedType, req.body.offercode, req.body.offerrate, req.body.note, req.body.image,1]);
   //adminActivity.RegisterAdmin(req.body, (err, count) => {
         if (err) {
@@ -147,7 +202,27 @@ if(err){
     //})
 });
 
- itemRoutes.route('/CommonOffers/update').post(function(req,res,err){
+ itemRoutes.post('/CommonOffers/update',upload.any(),function(req,res,err){
+  var qry="update tbl_commonoffersnew set ServiceCity=?,Type=?,OfferCode=?,OfferRate=?,Content=? where id=?";
+  if(req.files[0]!=undefined)
+  { 
+    qry="update tbl_commonoffersnew set ServiceCity=?,Type=?,OfferCode=?,OfferRate=?,Content=?,fileName=?,filePath=?,fileFormat=? where id=?";
+    dbconfig.query(qry, [req.body.selectedcity, req.body.selectedType, req.body.offercode, req.body.offerrate, req.body.note,req.files[0].originalname, '/upload/offers/'+req.files[0].filename, req.files[0].mimetype, req.body.id]);
+  }
+  else
+    dbconfig.query(qry, [req.body.selectedcity, req.body.selectedType, req.body.offercode, req.body.offerrate, req.body.note, req.body.id]);
+
+  //adminActivity.RegisterAdmin(req.body, (err, count) => {
+         if (err) {
+             res.json(err);
+         }
+         else {
+             res.json(req.body);
+         }
+    //})
+});
+
+ itemRoutes.route('/CommonOffersNew/update').post(function(req,res,err){
   var qry="update tbl_commonoffers set ServiceCity=?,Type=?,OfferCode=?,OfferRate=?,Content=?,image=? where id=?";
   var itm= dbconfig.query(qry, [req.body.selectedcity, req.body.selectedType, req.body.offercode, req.body.offerrate, req.body.note, req.body.image, req.body.id]);
   //adminActivity.RegisterAdmin(req.body, (err, count) => {
@@ -162,6 +237,18 @@ if(err){
 
 itemRoutes.route('/CommonOffers/edit/:id').get(function(req,res,err){
   var id = req.params.id;  
+  var qry="select * from tbl_commonoffersnew where id="+id; 
+var itemss=  dbconfig.query(qry,function(err,result,fields){
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
+itemRoutes.route('/CommonOffersNew/edit/:id').get(function(req,res,err){
+  var id = req.params.id;  
   var qry="select * from tbl_commonoffers where id="+id; 
 var itemss=  dbconfig.query(qry,function(err,result,fields){
 if(err){
@@ -172,10 +259,24 @@ if(err){
 });  
 });
 
+var storage1 = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, '/var/www/html/upload/sharepass')
+    },
+    filename: function (req, file, cb) {
+      if(file==undefined)
+        cb(null, undefined);
+      else
+        cb(null, file.originalname + '-' + Date.now() + getExtension(file));
+    }
+});
+
+var upload1 = multer({ storage: storage1 })
+
 //SharePass
 itemRoutes.route('/SharePass').get(function(req,res,err){
 //tbl_sharepass.FetchAllDetails((err,result,fields)=>{
-dbconfig.query("select *,(select ServiceArea from tbl_servicearea where id=tbl_sharepass.ServiceCityCode) as ServiceCity from tbl_sharepass",(err,result,fields)=>{
+dbconfig.query("select * from tbl_sharepassnew base",(err,result,fields)=>{
 if(err){
   res.json(err);
 }else{
@@ -185,7 +286,7 @@ if(err){
 });
 
 itemRoutes.route('/SharePass/Auto').get(function(req,res,err){
-var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_sharepass",function(err,result,fields){
+var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_sharepassnew",function(err,result,fields){
 if(err){
   res.json(err);
 }else{
@@ -196,7 +297,7 @@ if(err){
 
 itemRoutes.route('/SharePass/Del/:id').get(function(req,res,err){
 var id = req.params.id;  
-  var qry="Delete from tbl_sharepass where id="+id; 
+  var qry="Delete from tbl_sharepassnew where id="+id; 
 var itemss=  dbconfig.query(qry,function(err,result,fields){
 if(err){
   res.json(err);
@@ -206,7 +307,21 @@ if(err){
 });  
 });
  
- itemRoutes.route('/SharePass/add').post(function(req,res,err){
+itemRoutes.post('/SharePass/add',upload1.any(),function(req,res,err){
+  console.log(req.files[0].path);
+  var qry="INSERT INTO tbl_sharepassnew VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
+  var itm= dbconfig.query(qry, [req.body.id, req.body.selectedcity, req.body.selectedkms, req.body.selectedsize, req.body.rides, req.body.days, req.body.maxprice, req.body.disprice, req.body.flat, req.body.offerp, req.body.desc, req.files[0].originalname, '/upload/sharepass/'+req.files[0].filename, req.files[0].mimetype,1]);
+  //adminActivity.RegisterAdmin(req.body, (err, count) => {
+        if (err) {
+             res.json(err);
+         }
+         else {
+             res.json(req.body);
+         }
+    //})
+});
+
+ itemRoutes.route('/SharePassOld/add').post(function(req,res,err){
   var qry="INSERT INTO tbl_sharepass VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);"
   var itm= dbconfig.query(qry, [req.body.id, req.body.selectedcity, req.body.selectedkms, req.body.selectedsize, req.body.rides, req.body.days, req.body.maxprice, req.body.disprice, req.body.flat, req.body.offerp, req.body.desc, req.body.image,1]);
   //adminActivity.RegisterAdmin(req.body, (err, count) => {
@@ -219,7 +334,28 @@ if(err){
     //})
 });
 
- itemRoutes.route('/SharePass/update').post(function(req,res,err){
+itemRoutes.post('/SharePass/update',upload1.any(),function(req,res,err){
+  console.log(req.files[0]);
+  var qry="update tbl_sharepassnew set ServiceCityCode=?,KMs=?,Size=?,Rides=?,Days=?,MaxPrice=?,DispPrice=?,FlatPrice=?,OfferP=?,Description=? where id=?";
+  if(req.files[0]!=undefined)
+  { 
+    qry="update tbl_sharepassnew set ServiceCityCode=?,KMs=?,Size=?,Rides=?,Days=?,MaxPrice=?,DispPrice=?,FlatPrice=?,OfferP=?,Description=?,fileName=?,filePath=?,fileFormat=? where id=?";
+    dbconfig.query(qry, [ req.body.selectedcity, req.body.selectedkms, req.body.selectedsize, req.body.rides, req.body.days, req.body.maxprice, req.body.disprice, req.body.flat, req.body.offerp, req.body.desc,req.files[0].originalname, '/upload/sharepass/'+req.files[0].filename, req.files[0].mimetype, req.body.id]);
+  }
+  else
+    dbconfig.query(qry, [ req.body.selectedcity, req.body.selectedkms, req.body.selectedsize, req.body.rides, req.body.days, req.body.maxprice, req.body.disprice, req.body.flat, req.body.offerp, req.body.desc, req.body.id]);
+
+  //var qry="update tbl_sharepassnew set ServiceCityCode=?,KMs=?,Size=?,Rides=?,Days=?,MaxPrice=?,DispPrice=?,FlatPrice=?,OfferP=?,Description=?,fileName=?,filePath=?,fileFormat=? where id=?";
+  //var itm= dbconfig.query(qry, [ req.body.selectedcity, req.body.selectedkms, req.body.selectedsize, req.body.rides, req.body.days, req.body.maxprice, req.body.disprice, req.body.flat, req.body.offerp, req.body.desc,req.files[0].originalname, '/upload/sharepass/'+req.files[0].filename, req.files[0].mimetype, req.body.id]);
+   if (err) {
+       res.json(err);
+   }
+   else {
+       res.json(req.body);
+   }
+});
+
+ itemRoutes.route('/SharePassOld/update').post(function(req,res,err){
   var qry="update tbl_sharepass set ServiceCityCode=?,KMs=?,Size=?,Rides=?,Days=?,MaxPrice=?,DispPrice=?,FlatPrice=?,OfferP=?,Description=?,Picture=? where id=?";
   var itm= dbconfig.query(qry, [ req.body.selectedcity, req.body.selectedkms, req.body.selectedsize, req.body.rides, req.body.days, req.body.maxprice, req.body.disprice, req.body.flat, req.body.offerp, req.body.desc, req.body.image, req.body.id]);
   //adminActivity.RegisterAdmin(req.body, (err, count) => {
@@ -234,7 +370,7 @@ if(err){
 
 itemRoutes.route('/SharePass/edit/:id').get(function(req,res,err){
   var id = req.params.id;  
-  var qry="select * from tbl_sharepass where id="+id; 
+  var qry="select * from tbl_sharepassnew where id="+id; 
 var itemss=  dbconfig.query(qry,function(err,result,fields){
 if(err){
   res.json(err);
@@ -244,6 +380,54 @@ if(err){
 });  
 });
 
+//For App
+itemRoutes.route('/SharePass/ServiceCity').get(function(req,res,err){
+//tbl_sharepass.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select distinct ServiceCity from tbl_sharepassnew base",(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
+itemRoutes.route('/SharePass/KMS').get(function(req,res,err){
+//let bdy=req.body;
+let bdy=req.query;
+//tbl_sharepass.FetchAllDetails((err,result,fields)=>{
+dbconfig.query("select DispPrice,Description,filePath from tbl_sharepassnew base where ServiceCity=? and Size=? and KMs=?",[bdy.servicecity,bdy.size,bdy.kms],(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});
+});
+
+itemRoutes.route('/SharePass/SavePass').post(function(req,res,err){
+let bdy=req.body;
+//let bdy=req.query;
+var date = new Date();
+let todate = new Date().toISOString().slice(0, 10);
+var hours = date.getHours() > 12 ? date.getHours() - 12 : date.getHours();
+hours = hours < 10 ? "0" + hours : hours;
+var minutes = date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes();
+var seconds = date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds();
+time = hours + ":" + minutes + ":" + seconds;
+
+var qry="INSERT INTO tbl_sharepassmembers(`UserId`, `Mobileno`, `PassCode`, `PassAmt`, `Date`, `Time`, `RefNo`, `isActive`) VALUES (?,?,?,?,?,?,?,?);"
+var itm= dbconfig.query(qry, [        bdy.userid  ,bdy.mobile, bdy.passcode,bdy.passamt,todate, time, bdy.refno, 1],(err,result,fields)=>{
+  if(err){
+    res.json(err);
+  }else{
+    if(result.affectedRows>0)
+    var msg={}
+    msg.msg="success"  
+    res.json(msg);
+  }  
+})
+});
 
 //FAQ
 itemRoutes.route('/FAQ').get(function(req,res,err){
@@ -280,6 +464,7 @@ if(err){
 }  
 });  
 });
+
 itemRoutes.route('/FAQ/Auto').get(function(req,res,err){
 var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_faq",function(err,result,fields){
 if(err){
@@ -412,5 +597,110 @@ if(err){
 }  
 });  
 });
+
+//Coupon
+itemRoutes.route('/Coupon').get(function(req,res,err){
+//tbl_CommonOffers.FetchAllDetails((err,result,fields)=>{
+  dbconfig.query("select * from tbl_couponmaster",(err,result,fields)=>{
+    if(err){
+      res.json(err);
+    }else{
+      res.json(result);
+    }  
+  });  
+});
+
+itemRoutes.route('/Coupon/Auto').get(function(req,res,err){
+  var itemss=  dbconfig.query("select ifnull(max(id),0)+1 as id from tbl_couponmaster",function(err,result,fields){
+    if(err){
+      res.json(err);
+    }else{
+      res.json(result);
+    }  
+  });  
+});
+
+itemRoutes.route('/Coupon/Del/:id').get(function(req,res,err){
+  var id = req.params.id;  
+  var qry="Delete from tbl_couponmaster where id="+id; 
+  var itemss=  dbconfig.query(qry,function(err,result,fields){
+    if(err){
+      res.json(err);
+    }else{
+      res.json(result);
+    }  
+  });  
+});
+
+  var storage2 = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, '/var/www/html/upload/coupon')
+    },
+    filename: function (req, file, cb) {
+      if(file==undefined)
+        cb(null, undefined);
+      else
+        cb(null, file.originalname + '-' + Date.now() + getExtension(file));
+    }
+  });
+
+  var upload2 = multer({ storage: storage2 })
+// .fields([ // fields to accept multiple types of uploads
+//     { name: "image", maxCount: 1 } // in <input name='fileName' />
+//]);
+
+itemRoutes.post('/Coupon/add',upload2.any(),function(req,res,err){
+  //console.log(req.files[0]);
+  var qry="INSERT INTO tbl_couponmaster VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);"
+  if(req.files[0]==undefined)
+  {
+    dbconfig.query(qry, [req.body.id, req.body.selectedcity, req.body.selectedType, req.body.couponType, req.body.offercode, req.body.offerrate, req.body.note, '', '/upload/coupon/', '', req.body.offervalidity, req.body.monthly,1]);
+  }
+  else
+    dbconfig.query(qry, [req.body.id, req.body.selectedcity, req.body.selectedType, req.body.couponType, req.body.offercode, req.body.offerrate, req.body.note, req.files[0].originalname, '/upload/coupon/'+req.files[0].filename, req.files[0].mimetype, req.body.offervalidity, req.body.monthly,1]);
+  //adminActivity.RegisterAdmin(req.body, (err, count) => {
+  if (err) {
+     res.json(err);
+   }
+   else {
+     res.json(req.body);
+   }
+    //})
+    //console.log(itm)
+  });
+
+itemRoutes.post('/Coupon/update',upload2.any(),function(req,res,err){
+  //console.log(req.files[0]);
+  var qry="update tbl_couponmaster set ServiceCity=?,ServiceType=?,CouponType=?,CouponCode=?,CouponAmt=?,Description=?,Validity=?,MonthlyLimit=? where id=?";
+  if(req.files[0]!=undefined)
+  { 
+    qry="update tbl_couponmaster set ServiceCity=?,ServiceType=?,CouponType=?,CouponCode=?,CouponAmt=?,Description=?,Validity=?,MonthlyLimit=?,fileName=?,filePath=?,fileFormat=? where id=?";
+    dbconfig.query(qry, [req.body.selectedcity, req.body.selectedType, req.body.couponType, req.body.offercode, req.body.offerrate, req.body.note, req.body.offervalidity, req.body.monthly,req.files[0].originalname, '/upload/coupon/'+req.files[0].filename, req.files[0].mimetype, req.body.id]);
+  }
+  else
+    dbconfig.query(qry, [req.body.selectedcity, req.body.selectedType, req.body.couponType, req.body.offercode, req.body.offerrate, req.body.note, req.body.offervalidity, req.body.monthly, req.body.id]);
+  //adminActivity.RegisterAdmin(req.body, (err, count) => {
+   if (err) {
+     res.json(err);
+   }
+   else {
+     res.json(req.body);
+   }
+    //})
+  });
+
+itemRoutes.route('/Coupon/edit/:id').get(function(req,res,err){
+  var id = req.params.id;  
+  var qry="select * from tbl_couponmaster where id="+id; 
+  var itemss=  dbconfig.query(qry,function(err,result,fields){
+    if(err){
+      res.json(err);
+    }else{
+      res.json(result);
+    }  
+  });  
+});
+
 module.exports = itemRoutes;
+
 

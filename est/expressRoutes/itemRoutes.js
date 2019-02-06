@@ -237,8 +237,9 @@ if(err){
 });
 
 itemRoutes.route('/CourierConfig/update').post(function(req,res,err){
-  var qry="update tbl_courierconfig set studentminRate=?,studentaddlRate=?,DMinRate=?,DAddlRate=? where id=1";
-  var itm= dbconfig.query(qry, [req.body.sminRate, req.body.saddRate,req.body.dminRate, req.body.daddRate]);
+  console.log('dbconfig')
+  var qry="update tbl_courierconfig set studentminRate=?,studentaddlRate=?,DMinRate=?,DAddlRate=?,LSminRate=?,LSaddlRate=?,LDminRate=?,LDaddlRate=? where id=1";
+  var itm= dbconfig.query(qry, [req.body.sminRate, req.body.saddRate,req.body.dminRate, req.body.daddRate,req.body.LsminRate, req.body.LsaddRate,req.body.LdminRate, req.body.LdaddRate]);
   //adminActivity.RegisterAdmin(req.body, (err, count) => {
          if (err) {
              res.json(err);

@@ -9,6 +9,7 @@ var form = new FormData()
 // var jsonParser = body_parser.urlencoded()
 const userActivity = require('../controller/user-Controller')
 const jwt = require('jsonwebtoken')
+var dbconfig = require('../config/db')
 
 // Add User
 router.post('/adduser', (request, response) => {  
@@ -58,5 +59,16 @@ var mobno=request.param("mobno");
 //response.send(JSON.stringify(ResMsg))
   })
 })
+
+//Referral
+router.get('/Referral',function(req,res,err){
+  var itemss=  dbconfig.query("select ReferralCode from tbl_userdetails where mobile=?",[req.query.mobno],function(err,result,fields){
+    if(err){
+      res.json(err);
+    }else{
+      res.json(result);
+    }  
+  });  
+});
 
 module.exports = router
