@@ -269,6 +269,32 @@ if(err){
 });  
 });
 
+//Service Area - App
+itemRoutes.route('/ServiceArea/CoverArea').get(function(req,res,err){
+//tbl_producttype.FetchAllDetails((err,result,fields)=>{
+  let reqq=req.query;
+  //let reqq=request.body;
+  let type=reqq.type;
+  
+  let cond=""
+  if(type.indexOf('cour')>=0)
+    cond=" and isCourier='true'"
+  else if(type.indexOf('shar')>=0)
+    cond=" and isSharing='true'"
+  else if(type.indexOf('parc')>=0)
+    cond=" and isParcel='true'"
+  else if(type.indexOf('rent')>=0)
+    cond=" and isRental='true'"
+
+dbconfig.query("select * from vw_servicearea where ServiceArea=?"+cond,[reqq.servicearea],(err,result,fields)=>{
+if(err){
+  res.json(err);
+}else{
+  res.json(result);
+}  
+});  
+});
+
 
 //Service Area
 itemRoutes.route('/ServiceArea').get(function(req,res,err){

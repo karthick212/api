@@ -56,11 +56,16 @@ console.log(rows)
   },
 // Create Driver Profile
   Createprofiledetails(profileData, callback) {
- 
     //let querys = 'INSERT INTO tbl_driver_general_detail SET ?'
-    let querys = 'INSERT INTO `tbl_driver_general_detail` (`id`, `driver_id`, `driver_name`, `driver_email`, `driver_phone`, `driver_lan`, `driver_address`, `year_experience`, `vehicle_width`, `vehicle_height`, `vehicle_depth`, `vehicles_model`, `vehicle_number`, `driver_city`, `driver_pan_no`, `driver_adhaar_no`, `driver_image`, `driver_full_image`, `driver_aadhar`, `driver_license`, `driver_voterId`, `driver_vehicleImage`, `driver_ration_gas_book`, `driver_onwer_proof`) VALUES ?'
-    let datas = [profileData.d_id, profileData.driver_name, profileData.driver_email, profileData.driver_phone, profileData.driver_lan, profileData.driver_address, profileData.year_experience, profileData.vehicle_width, profileData.vehicle_heigth, profileData.vehicle_depth, profileData.vehicles_model, profileData.vehicle_number, ,profileData.driver_city, profileData.driver_pan_no, profileData.driver_adhaar_no]
-    return dbconfig.query(querys, profileData , callback())
+    var arr1=[profileData.driverid, profileData.drivermobileno]
+    let insertQuery = "INSERT INTO `tbl_driverstatus`(Driverid,Mobileno,isMadmoney, isShare, isHire, isRental,isActive) VALUES(?,?,'Off','Off','Off','Off',1) "
+    dbconfig.query(insertQuery, arr1, (err, results) => {
+      })
+
+    let querys = 'INSERT INTO `tbl_driver_general_detail` (`driver_id`, `drivertype`,`driver_name`, `driver_email`, `driver_phone`, `driver_lan`,    `driver_address`,        `year_experience`,      `vehicle_width`,          `vehicle_height`,           `vehicle_depth`,           `vehicle_model`,         `vehicle_number`,   `vehicle_type`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    let datas = [profileData.driverid, profileData.drivertype, profileData.drivername, profileData.driveremail, profileData.drivermobileno, profileData.driverlan, profileData.driveraddress, profileData.experience, profileData.vehiclewidth, profileData.vehicleheight, profileData.vehicledepth, profileData.vehiclemodel, profileData.vehiclenumber, profileData.vehicletype]
+    return dbconfig.query(querys, datas , callback())
+    //return dbconfig.query(querys, profileData , callback())
   },
   // FIle Uplaod
   CreatprofilImages(ImageData, header, callback) {
@@ -70,7 +75,14 @@ console.log(rows)
     } else {
       return 'no-data'
     }
-  }
+  }, 
+  DriverNoGen(cb){
+    let qry='select ifnull(max(id),0)+1 as cnt from tbl_driver_general_detail';
+    dbconfig.query(qry,(err,results) => {
+      //console.log(results);
+      return cb(results)
+    })
+   }
 }
 
 module.exports = driverController

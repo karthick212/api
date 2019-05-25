@@ -18,6 +18,7 @@ const apicourier = require('./routes/courier')
 const apiuser = require('./routes/user')
 const apiparcel = require('./routes/parcel')
 const apirental = require('./routes/rental')
+const apimoney = require('./routes/donkeymoney')
 
 config.connect(function(err) {
   if (err) throw err
@@ -42,6 +43,7 @@ app.use('/api/user/', apiuser)
 app.use('/api/courier/', apicourier)
 app.use('/api/parcel/', apiparcel)
 app.use('/api/rental/', apirental)
+app.use('/api/money/', apimoney)
 
       const port = process.env.PORT || 4000;
 

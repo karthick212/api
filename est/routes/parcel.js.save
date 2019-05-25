@@ -34,8 +34,8 @@ var xl=xl1.substring(2,xl1.length);
 var ress=[];
 
 //SharePass Calculation
-var arrSize=res.chkSize==","?"":res.chkSize.split(",");
-var arrBal=res.chkBal==","?"":res.chkBal.split(",");
+var arrSize=res.chkSize.split(",");
+var arrBal=res.chkBal.split(",");
 var ss=small,sm=medium,sl=large,sxl=xl;
 if(arrSize.length>1)
 {
@@ -99,9 +99,8 @@ else if(res.SplDisc>0)
   offerHeader='Flat '+res.SplDisc+'% Offer'
 }
 
-ress[0] = {'LSAmt':res.LSAmt,'LMAmt':res.LMAmt,'LLAmt':res.LLAmt,'DSAmt':res.DSAmt,'DMAmt':res.DMAmt,'DLAmt':res.DLAmt,'SAmt':res.HAmt,'Total':Total,'dist':res.dist,'disc':disc,'offerHeader':offerHeader}
+ress[0] = {'LSAmt':res.LSAmt,'LMAmt':res.LMAmt,'LLAmt':res.LLAmt,'DSAmt':res.DSAmt,'DMAmt':res.DMAmt,'DLAmt':res.DLAmt,'HAmt':	res.HAmt,'Total':Total,'dist':res.dist,'disc':disc,'offerHeader':offerHeader}
 ResMsg.data=ress;
-console.log(ResMsg)
 //response.json(ResMsg);
 
 response.json(ResMsg);

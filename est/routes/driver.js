@@ -9,6 +9,8 @@ var form = new FormData()
 // var jsonParser = body_parser.urlencoded()
 const driverActivity = require('../controller/driver-Controller')
 const jwt = require('jsonwebtoken')
+var dbconfig = require('../config/db')
+
 // login
 router.post('/login', function (req, res, next) {
   driverActivity.DriverLogin(req.body, (err, rows) => {
@@ -94,44 +96,96 @@ router.post('/checkotp', (req, res) => {
   })
 })
 
+
 // create Profile
-router.post('/createProfile', (req, res) => {
-  let id = Math.floor(1000 + Math.random() * 9000);
-  req.body.driver_id = 'D'+id;
-  driverActivity.Createprofiledetails(req.body, (err, count) => {
-    (err) ? res.json(err) : res.json('success1');
+router.post('/AddDriver', (req, res) => {
+  driverActivity.DriverNoGen((results)=>{
+  req.body.driverid = 'D'+(results[0].cnt+10000);
+    driverActivity.Createprofiledetails(req.body, (err, count) => {
+      console.log(count);
+      console.log(err);
+      (err) ? res.json(err) : res.json('success1');
+    })
   })
 })
 
 var storage = multer.diskStorage(
-  {
-    destination: 'upload/driver',
-    filename: function (req, file, cb) {
-      cb(null, file.originalname);
-    }
+{
+  destination: '/var/www/html/upload/driver',
+  filename: function (req, file, cb) {
+    if(file==undefined)
+      cb(null, undefined);
+    else
+      cb(null,Date.now() + '_' + file.originalname);
   }
+}
 );
 var upload = multer({ storage: storage });
 
 // Profile Image
 // var cpUpload = upload.fields([{ name: 'driver_image', maxCount: 1, path }, { name: 'driver_aadhar', maxCount: 1 }])
-router.post('/createProfileImage', upload.array('driver_files'), (req, res) => {
+router.post('/AddDriverImage', upload.any(), (req, res) => {
+  //console.log(req.files)
+  let did=req.body.driver_id;
   let header;
   if (req.headers['driver_id']) {
     header = req.headers['driver_id']
   }
   let driver = [];
+  let driverfield = [];
   req.files.map((res, index) => {
-    driver[index] = res.path;
+    driver[index] = res.filename;
+    driverfield[index] = res.fieldname;
   })
   console.log(driver)
   // return driver
-  driverActivity.CreatprofilImages(driver, header, (err, result) => {
+  driverActivity.CreatprofilImages(driver, did, (err, result) => {
     if (err) throw err;
+    console.log(result);
     if (result) {
       let result = { 'message': 'success' }
       res.send(result)
     }
   });
 })
+
+
+//Student Duty Status
+router.get('/StudentStatus',function(req,res,err){
+  var itemss=  dbconfig.query("select isMadmoney from tbl_driverstatus where Driverid=?",[req.query.driverid],function(err,result,fields){
+    if(err){
+      res.json(err);
+    }else{
+      res.json(result);
+    }  
+  });  
+});
+
+//Driver Duty Status
+router.get('/DriverStatus',function(req,res,err){
+  var itemss=  dbconfig.query("select isShare,isHire,isRental from tbl_driverstatus where Driverid=?",[req.query.driverid],function(err,result,fields){
+    if(err){
+      res.json(err);
+    }else{
+      res.json(result);
+    }  
+  });  
+});
+
+//Change Duty Status
+router.post('/ChangeStatus',function(req,res,err){
+  //var resp=req.query;
+  var request=req.body;
+  var itemss=  dbconfig.query("update tbl_driverstatus set isMadmoney=?,isShare=?,isHire=?,isRental=? where Driverid=?",[request.isMadmoney,request.isShare,request.isHire,request.isRental,request.driverid],function(err,result,fields){
+    if(err){
+      res.json(err);
+    }else{
+      if(result.affectedRows>0)
+      res.json("changed");
+    else
+      res.json(err);
+    }  
+  });  
+});
+
 module.exports = router

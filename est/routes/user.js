@@ -10,6 +10,61 @@ var form = new FormData()
 const userActivity = require('../controller/user-Controller')
 const jwt = require('jsonwebtoken')
 var dbconfig = require('../config/db')
+var nodemailer = require('nodemailer');
+
+
+router.post('/sendmail', (request, response) => {  
+  var res=request.body;
+
+  //create the path of email template folder 
+    // var templateDir = path.join(__dirname, "../", 'templates')
+
+    // var testMailTemplate = new EmailTemplate(templateDir);
+    // var locals = {
+    //     userName: "XYZ" //dynamic data for bind into the template
+    //   };
+console.log(res);
+      var transporter = nodemailer.createTransport({
+        service: res.Service,
+        host: res.Host,  
+        secureConnection: true,
+        port: res.Port,
+        auth: {
+      user: res.Username, // generated ethereal user
+      pass: res.Password // generated ethereal password
+    }
+//     ,
+//     tls:{
+// secureProtocol: "TLSv1_method"
+// }
+});
+
+      // testMailTemplate.render(locals, function (err, temp) {
+      //   if (err) {
+      //     console.log("error", err);
+
+      //   } 
+      //   else
+        {
+          var mailOptions = {
+        from: res.From,
+        to: res.To,
+        subject: res.Subject,        
+        html: res.Text
+      };
+
+          transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+    //console.log(error);
+    response.json({"msg": error});
+  } else {
+    //console.log('Email sent: ' + sd);
+    console.log(res.Text);
+    response.json({"msg":info.response});
+  }
+});
+        }
+        })
 
 // Add User
 router.post('/adduser', (request, response) => {  

@@ -142,7 +142,7 @@ console.log(res);
               {
                 if(parcelcat.indexOf('shar')>=0)
                 {
-                  let query="select offerprice,SDispRate from tbl_sharingrate where ServiceArea like ? and SharingSize='L-Large' and isActive!='0'"
+                  let query="select offerprice,SDispRate from tbl_sharingrate where ServiceArea like ? and SharingSize='L-Long' and isActive!='0'"
                   dbconfig.query(query, ['%'+tocity+'%'], (err, rows1) => { try{ this.DistCalc(rows1[0].offerprice,rows1[0].SDispRate,dist,(res)=>{
                     try{ ResMsg.LLAmt = res.SAmt} catch(e) { ResMsg.LLAmt=0; } })}
                   catch(e){ResMsg.LLAmt=0;  }              
@@ -151,7 +151,7 @@ console.log(res);
                 }
                 if(parceltype.indexOf('loc')!=0)
                 {
-                  let query="select offerprice from tbl_parcelrate where ParcelName=? and ParcelSize='L-Large' and isActive!='0' and FromCity like ? and ToCity like ?"
+                  let query="select offerprice from tbl_parcelrate where ParcelName=? and ParcelSize='L-Long' and isActive!='0' and FromCity like ? and ToCity like ?"
                   dbconfig.query(query, [rows[0].ParcelName,'%'+fromcity+'%','%'+tocity+'%'], (err, rows) => { try{ ResMsg.DLAmt = rows[0].offerprice; } catch(e) { ResMsg.DLAmt=0; } })
                 }
               }

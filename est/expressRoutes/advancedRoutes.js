@@ -309,6 +309,7 @@ if(err){
  
 itemRoutes.post('/SharePass/add',upload1.any(),function(req,res,err){
   console.log(req.files[0].path);
+  console.log(req.body);
   var qry="INSERT INTO tbl_sharepassnew VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"
   var itm= dbconfig.query(qry, [req.body.id, req.body.selectedcity, req.body.selectedkms, req.body.selectedsize, req.body.rides, req.body.days, req.body.maxprice, req.body.disprice, req.body.flat, req.body.offerp, req.body.desc, req.files[0].originalname, '/upload/sharepass/'+req.files[0].filename, req.files[0].mimetype,1]);
   //adminActivity.RegisterAdmin(req.body, (err, count) => {
@@ -336,10 +337,10 @@ itemRoutes.post('/SharePass/add',upload1.any(),function(req,res,err){
 
 itemRoutes.post('/SharePass/update',upload1.any(),function(req,res,err){
   console.log(req.files[0]);
-  var qry="update tbl_sharepassnew set ServiceCityCode=?,KMs=?,Size=?,Rides=?,Days=?,MaxPrice=?,DispPrice=?,FlatPrice=?,OfferP=?,Description=? where id=?";
+  var qry="update tbl_sharepassnew set ServiceCity=?,KMs=?,Size=?,Rides=?,Days=?,MaxPrice=?,DispPrice=?,FlatPrice=?,OfferP=?,Description=? where id=?";
   if(req.files[0]!=undefined)
   { 
-    qry="update tbl_sharepassnew set ServiceCityCode=?,KMs=?,Size=?,Rides=?,Days=?,MaxPrice=?,DispPrice=?,FlatPrice=?,OfferP=?,Description=?,fileName=?,filePath=?,fileFormat=? where id=?";
+    qry="update tbl_sharepassnew set ServiceCity=?,KMs=?,Size=?,Rides=?,Days=?,MaxPrice=?,DispPrice=?,FlatPrice=?,OfferP=?,Description=?,fileName=?,filePath=?,fileFormat=? where id=?";
     dbconfig.query(qry, [ req.body.selectedcity, req.body.selectedkms, req.body.selectedsize, req.body.rides, req.body.days, req.body.maxprice, req.body.disprice, req.body.flat, req.body.offerp, req.body.desc,req.files[0].originalname, '/upload/sharepass/'+req.files[0].filename, req.files[0].mimetype, req.body.id]);
   }
   else
@@ -396,17 +397,18 @@ itemRoutes.route('/SharePass/KMS').get(function(req,res,err){
 //let bdy=req.body;
 let bdy=req.query;
 //tbl_sharepass.FetchAllDetails((err,result,fields)=>{
-dbconfig.query("select DispPrice,Description,filePath from tbl_sharepassnew base where ServiceCity=? and Size=? and KMs=?",[bdy.servicecity,bdy.size,bdy.kms],(err,result,fields)=>{
-if(err){
-  res.json(err);
-}else{
-  res.json(result);
-}  
-});
+  dbconfig.query("select id,DispPrice,Description,filePath,Rides from tbl_sharepassnew base where ServiceCity=? and Size=? and KMs=?",[bdy.servicecity,bdy.size,bdy.kms],(err,result,fields)=>{
+    if(err){
+      res.json(err);
+    }else{
+      res.json(result);
+    }  
+  });
 });
 
 itemRoutes.route('/SharePass/SavePass').post(function(req,res,err){
-let bdy=req.body;
+  let bdy=req.body;
+console.log(req.body);
 //let bdy=req.query;
 var date = new Date();
 let todate = new Date().toISOString().slice(0, 10);
@@ -416,17 +418,42 @@ var minutes = date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes
 var seconds = date.getSeconds() < 10 ? "0" + date.getSeconds() : date.getSeconds();
 time = hours + ":" + minutes + ":" + seconds;
 
-var qry="INSERT INTO tbl_sharepassmembers(`UserId`, `Mobileno`, `PassCode`, `PassAmt`, `Date`, `Time`, `RefNo`, `isActive`) VALUES (?,?,?,?,?,?,?,?);"
-var itm= dbconfig.query(qry, [        bdy.userid  ,bdy.mobile, bdy.passcode,bdy.passamt,todate, time, bdy.refno, 1],(err,result,fields)=>{
-  if(err){
-    res.json(err);
-  }else{
-    if(result.affectedRows>0)
-    var msg={}
-    msg.msg="success"  
-    res.json(msg);
-  }  
+dbconfig.query("select count(*) as cnt from vw_sharepassbalance where MobileNo=? and SharepassCode=? and Balance>0",[bdy.mobno,bdy.passcode],(err,res1)=>{
+  if(res1[0].cnt>0)
+  {
+    res.json({msg:"exist"});
+  }
+  else
+  {
+    var qry="INSERT INTO tbl_sharepassmembers(`UserId`, `Mobileno`, `PassCode`, `PassAmt`, `Date`, `Time`, `RefNo`, `isActive`) VALUES (?,?,?,?,?,?,?,?);"
+    var itm= dbconfig.query(qry, [        bdy.userid  ,bdy.mobno, bdy.passcode,bdy.passamt,todate, time, bdy.refno, 1],(err,result,fields)=>{
+      if(err){
+        res.json(err);
+      }else{
+        if(result.affectedRows>0)
+          var arr=[todate,time,bdy.userid,bdy.mobno,bdy.passcode,bdy.rides]
+        dbconfig.query("INSERT INTO `tbl_sharepassdetails` (`Date`, `Time`, `UserId`, `MobileNo`, `SharepassCode`, `Debit`, `Credit`, `isActive`) VALUES (?, ?, ?, ?, ?, ?, 0, 1)",arr);
+        var msg={}
+        msg.msg="success"  
+        res.json(msg);
+      }  
+    })  
+  }
 })
+
+});
+
+itemRoutes.route('/SharePass/ApplySharepass').get(function(req,res,err){
+//let bdy=req.body;
+let bdy=req.query;
+//tbl_sharepass.FetchAllDetails((err,result,fields)=>{
+  dbconfig.query("select SharepassCode,ServiceCity,Size,KMs,Remaining from vw_sharepassbalance where MobileNo=?",[bdy.mobno],(err,result,fields)=>{
+    if(err){
+      res.json(err);
+    }else{
+      res.json(result);
+    }  
+  });
 });
 
 //FAQ
@@ -650,7 +677,7 @@ itemRoutes.route('/Coupon/Del/:id').get(function(req,res,err){
 //]);
 
 itemRoutes.post('/Coupon/add',upload2.any(),function(req,res,err){
-  //console.log(req.files[0]);
+  console.log(req.files[0]);
   var qry="INSERT INTO tbl_couponmaster VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);"
   if(req.files[0]==undefined)
   {
@@ -699,6 +726,41 @@ itemRoutes.route('/Coupon/edit/:id').get(function(req,res,err){
       res.json(result);
     }  
   });  
+});
+
+itemRoutes.route('/Coupon/ApplyCoupon').get(function(req,res,err){
+  //let bdy=req.body;
+let bdy=req.query;
+//console.log(bdy);
+let ctype=bdy.couriertype
+let stype=bdy.servicetype
+dbconfig.query("select count(*) from vw_couponbalance where Mobileno=?",[bdy.mobno],(err,res1)=>{
+  if(stype.indexOf('cou')>=0&&ctype.indexOf('loc')==0)
+    res.json();
+  else if(res1.length>0)
+  {
+      //and curdate()<=date_add(Date,INTERVAL Validity day) for Future Check Validity Days
+      dbconfig.query("select Couponid,CouponType,CouponCode,CouponAmt,Description,filePath from vw_coupondetails base where Mobileno=?",[bdy.mobno],(err,result,fields)=>{
+        if(err){
+          res.json(err);
+        }else{
+          res.json(result);
+        }  
+      });  
+    }
+    else
+    {
+    //and curdate()<=date_add(Date,INTERVAL Validity day) for Future Check Validity Days
+    dbconfig.query("select id as Couponid,CouponType,CouponCode,CouponAmt,Description,filePath from tbl_couponmaster base where MonthlyLimit=? and ServiceCity=? and ServiceType=? and CouponType='Business'",[500,bdy.servicecity,bdy.servicetype],(err,result,fields)=>{
+      if(err){
+        //res.json(err);
+      }else{
+        //res.json(result);
+      }  
+    });       
+  }
+})
+
 });
 
 module.exports = itemRoutes;

@@ -66,6 +66,7 @@ AddBooking(user,callback) {
 //    let qry='select CategoryVehicle,offerprice from vw_Rentalrate where ServiceCity=? and RentalPackages=?';
 
 
+console.log(city)
  let qry='select CategoryVehicle,offerprice from vw_rentalrate where ServiceCity=? and RentalPackages=?';
 
     dbconfig.query(qry,[city,pack],(err,results) => {

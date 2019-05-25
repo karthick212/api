@@ -42,32 +42,49 @@ var UserController = {
       }
     );
   },
-AmountCalc(flat,flong,fs,ts,ctype,cname,DL1,DB1,DL2,DB2,BL1,BB1,BH1,BL2,BB2,BH2,tlat,tlong, cb)  {  
+  AmountCalc(res, cb)  {  
 	//let res = {}
+  //flat,flong,fs,ts,ctype,cname,DL1,DB1,DL2,DB2,BL1,BB1,BH1,BL2,BB2,BH2,tlat,tlong,offercode,city
       let ResMsg = {};
-      /* let flat=res.flat
+      let flat=res.flat
       let flong=res.flong
       let fs=res.fromstate;
       let ts=res.tostate;
       let ctype=res.couriertype;
       let cname=res.couriername;
+      let DL1=res.DL1;
+      let DB1=res.DB1;
+      let DL2=res.DL2;
+      let DB2=res.DB2;
       let BL1=res.BL1;
       let BB1=res.BB1;
       let BH1=res.BH1;
       let BL2=res.BL2;
       let BB2=res.BB2;
-      let BH2=res.BH2;*/
+      let BH2=res.BH2;
+      let tlat=res.tlat;
+      let tlong=res.tlong;
+      let couponcode=res.couponcode;
+      let city=res.city;
 
+      let query1="select ifnull(CouponAmt,0) as CouponAmt from tbl_couponmaster where isActive<>'0' and CouponCode=?"
+      dbconfig.query(query1, [couponcode], (err, rows) => { try{ ResMsg.CouponAmt = rows[0].CouponAmt} catch(e) { ResMsg.CouponAmt=0; } })
+
+      var date = new Date();
+      var weekday = new Array(7);
+      weekday[0] =  "Sunday";
+      weekday[1] = "Monday";
+      weekday[2] = "Tuesday";
+      weekday[3] = "Wednesday";
+      weekday[4] = "Thursday";
+      weekday[5] = "Friday";
+      weekday[6] = "Saturday";
+      var day=weekday[date.getDay()];
+      query1="select Discount from tbl_dailydiscount where ServiceType='courier' and isActive<>'0' and ServiceArea=? and day=? "
+      dbconfig.query(query1, [city,day], (err, rows) => { try{ ResMsg.SplDisc = rows[0].Discount} catch(e) { ResMsg.SplDisc=0; } })
+      
       let BT1=(BL1*BB1*BH1)/5000;
       let BT2=(BL2*BB2*BH2)/5000;
-
-
-let cond="";
-console.log("ener");
-
-  if(ctype.indexOf('loc')>=0){ cond=' and Area=\'Local\'' ;console.log(cond);}
-
-
       
       if(ctype.indexOf('loc')!=0)
       {
@@ -95,6 +112,7 @@ console.log("ener");
             ResMsg.BAmt1=0
             ResMsg.BAmt2=0
           }
+
           distance.get({origin:flat+','+flong,destination:tolat+','+tolong },(err,rowss)=>{
           let query='select * from tbl_courierconfig'
           let dist=rowss.distanceValue/1000
@@ -102,6 +120,11 @@ console.log("ener");
           try {             
           let firstkm=rows[0].studentMinRate+rows[0].DMinRate
           let secndkm=rows[0].studentAddlRate+rows[0].DAddlRate
+          if(ctype.indexOf('loc')>=0)
+          {
+            firstkm=rows[0].LSminRate+rows[0].LDminRate
+            secndkm=rows[0].LSaddlRate+rows[0].LDaddlRate  
+          }
           Amt=firstkm;
           let diff=dist-1.2
           if(Math.sign(diff)!=-1)
@@ -110,7 +133,7 @@ console.log("ener");
               Amt+=secndkm
           }
           ResMsg.SAmt=Amt
-	  ResMsg.localdist=dist
+	        ResMsg.localdist=dist
           return cb(null,ResMsg)
         } 
         catch(e) { } 
@@ -120,7 +143,7 @@ console.log("ener");
       });     
 
       //return cb(null,ResMsg)
-   },
+   } ,
 AddBooking(user,callback) {
         var date = new Date();
         let todate = new Date().toISOString().slice(0, 10);
